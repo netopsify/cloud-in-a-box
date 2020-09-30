@@ -1,0 +1,12 @@
+{
+  "watches": [
+    {
+      "name": "echo",
+      "type": "event",
+      "handler_type": "script",
+      "args": [
+        "/vagrant/consul/watches/scripts/logly.sh"
+      ]
+    }
+  ]
+}
