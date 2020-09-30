@@ -1,0 +1,20 @@
+datacenter = "{{ datacenter }}"
+
+{% if consul.advertise_int is defined %}
+advertise_addr = "{% raw %} {{ GetInterfaceIP `{% endraw %}{{ consul.advertise_int }}{% raw %}` }}{% endraw %}"
+{% elif consul.advertise_addr is defined %}
+advertise_addr = "{{ consul.advertise_addr }}"
+{% else %}
+advertise_addr = "0.0.0.0"
+{% endif %}
+
+client_addr = "{{ consul.client_addr }}"
+retry_join = [{% for server in consul.servers %}"{{ server }}"{{ ", " if not loop.last}}{% endfor %}]
+
+data_dir = "{{ consul.data_dir }}"
+
+log_level = "{{ consul.log_level }}"
+
+disable_remote_exec = {{ consul.disable_remote_exec }}
+enable_script_checks = {{ consul.enable_script_checks }}
+enable_local_script_checks = {{ consul.enable_local_script_checks }}

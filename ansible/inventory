@@ -1,0 +1,88 @@
+[consul_servers]
+cs-1 ansible_host=172.16.1.11
+
+[consul_servers:vars]
+consul_node_type=server
+
+[vault_servers]
+vs-1 ansible_host=172.16.1.21
+
+[vault_servers:vars]
+vault_node_type=server
+
+[nomad_servers]
+ns-1 ansible_host=172.16.1.31
+
+[nomad_servers:vars]
+nomad_node_type=server
+
+[web]
+web-1 ansible_host=172.16.1.201
+web-2 ansible_host=172.16.1.202
+web-3 ansible_host=172.16.1.203
+
+[web:vars]
+vault_node_type=app
+nomad_node_type=client
+
+[lb:children]
+lb_linux
+lb_f5
+
+[lb_linux]
+lb-1 ansible_host=172.16.1.101 
+
+[lb_linux:vars]
+consul_template=true
+nomad_node_type=client
+
+[lb_f5]
+bigip01 ansible_host=192.168.0.233 connection=local delegate_to=localhost
+
+[lb_f5:vars]
+ansible_user=admin
+ansible_password=admin
+
+[as]
+as-1 ansible_host=172.16.1.250
+
+[as:vars]
+consul_template=true
+vault_node_type=app
+nomad_node_type=client
+
+[consul_clients:children]
+vault_servers
+nomad_servers
+web
+as
+lb_linux
+
+[vault_clients:children]
+as
+
+[nomad_clients:children]
+web
+as
+lb_linux
+
+[consul:children]
+consul_servers
+consul_clients
+
+[vault:children]
+vault_servers
+vault_clients
+
+[nomad:children]
+nomad_servers
+nomad_clients
+
+[all:vars]
+ansible_user=vagrant
+ansible_password=vagrant
+ansible_port=22
+consul_node_type=client
+vault_node_type=client
+nomad_node_type=client
+become=true

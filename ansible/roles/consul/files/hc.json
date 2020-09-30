@@ -1,0 +1,28 @@
+{
+  "checks": [
+    {
+      "id": "check_cpu_utilization",
+      "name": "CPU Utilization",
+      "args": [
+        "/etc/consul.d/scripts/cpu_utilization.sh"
+      ],
+      "interval": "10s"
+    },
+    {
+      "id": "check_mem_utilization",
+      "name": "MEM Utilization",
+      "args": [
+        "/etc/consul.d/scripts/mem_utilization.sh"
+      ],
+      "interval": "10s"
+    },
+    {
+      "id": "check_hdd_utilization",
+      "name": "HDD Utilization",
+      "args": [
+        "/etc/consul.d/scripts/hdd_utilization.sh"
+      ],
+      "interval": "10s"
+    }
+  ]
+}

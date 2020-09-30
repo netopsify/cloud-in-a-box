@@ -1,0 +1,128 @@
+---
+# tasks file for consul-template
+- name: create consul group
+  ansible.builtin.group:
+    name: consul
+    state: present
+  become: true
+
+- name: Add non-privileged user for Consul
+  ansible.builtin.user:
+    name: consul
+    system: true
+    shell: /bin/bash
+  become: true
+
+- name: create consul-template data directory
+  ansible.builtin.file:
+    path: "{{ consul_template.config_dir }}"
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+  become: true
+
+- name: Download consul-template
+  get_url:
+    url: https://releases.hashicorp.com/consul-template/{{ consul_template.version }}/consul-template_{{ consul_template.version }}_linux_amd64.zip
+    dest: "{{ consul_template.config_dir }}/consul-template.zip"
+  become: true
+
+- name: check if rules file exists
+  stat: 
+    path: /usr/bin/consul-template
+  register: ct_exists
+
+- name: unzip consul-template
+  unarchive:
+    src: "{{ consul_template.config_dir }}/consul-template.zip"
+    dest: /usr/bin
+    remote_src: yes
+  become: true
+  when: ct_exists.stat.exists == False
+
+- name: make consul-template executable
+  ansible.builtin.file:
+    path: /usr/bin/consul-template
+    mode: "+x"
+    owner: consul
+    group: consul
+  when: ct_exists.stat.exists == False
+
+# - name: remove consul-template archive
+#   ansible.builtin.file:
+#     path: "{{ consul_template.config_dir }}/consul-template.zip"
+#     state: absent
+#   become: true
+
+- name: create consul-template templates directory
+  ansible.builtin.file:
+    path: "{{ consul_template.templates_dir }}"
+    state: directory
+    mode: 0755
+    owner: vagrant
+    group: vagrant
+  become: true
+
+- name: create consul-template handlers directory
+  ansible.builtin.file:
+    path: "{{ consul_template.handlers_dir }}"
+    state: directory
+    mode: 0755
+    owner: vagrant
+    group: vagrant
+  become: true
+
+- name: Copy templates and handlers
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /opt/consul-template/{{ item }}/
+  become: yes
+  loop:
+    - templates/
+    - handlers/
+
+- name: create consul-template sysconfig directory
+  ansible.builtin.file:
+    path: /etc/consul-template.d
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+  become: true
+
+- name: Copy consul-templates configs
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/consul-template.d/
+  become: yes
+  loop:
+    - configs/
+
+- name: create consul service directory
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system
+    state: directory
+  become: true
+
+- name: install consul-template sysconfig
+  ansible.builtin.copy:
+    src: consul-template.service
+    dest: /usr/lib/systemd/system/consul-template.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: enable consul-template service
+  ansible.builtin.service:
+    name: consul-template
+    enabled: yes
+  become: true
+
+# - name: start consul-template on server
+#   ansible.builtin.service:
+#     name: consul-template
+#     state: started
+#   become: true
+#   when: consul-template is defined and consul-template

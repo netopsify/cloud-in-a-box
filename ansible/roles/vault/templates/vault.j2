@@ -1,0 +1,31 @@
+ui = true
+api_addr = "{{ vault.api.scheme }}://{{ vault.api.address }}:{{ vault.api.port }}"
+listener "tcp" {
+  address       = "{{ vault.listerner_address }}:{{ vault.listerner_port }}"
+  tls_disable = {{ vault.tls_disable }}
+}
+
+{% if vault.consul.enable is defined %}
+storage "consul" {
+  address = "{{ vault.consul.scheme }}://{{ vault.consul.address }}:{{ vault.consul.port }}"
+  path = "{{ vault.consul.path }}"
+}
+{% endif %}
+{% if vault.file.enable is defined %}
+storage "file" {
+  path = "{{ vault.file.path }}"
+}
+{% endif %}
+
+{% if vault.telemetry.enable is defined  %}
+telemetry {
+{% if vault.telemetry.type == "prometheus" %}
+  prometheus_retention_time = "30s"
+  disable_hostname = true
+}
+{% endif %}
+{% if vault.telemetry.type == "statsd" %}
+  statsd_address = "{{ vault.telemetry.system_addr }}:{{ vault.telemetry.system_port }}"
+}
+{% endif %}
+{% endif %}

@@ -1,0 +1,100 @@
+---
+# tasks file for lb
+- name: Upload a file via multipart/form-multipart
+  uri:
+    url: http://localhost:8500/v1/kv/prod/portal/haproxy/{{ item.key }}
+    method: PUT
+    body: "{{ item.value }}"
+  loop:
+    - key: maxconn
+      value: 4096
+    - key: mode
+      value: http
+    - key: timeout-connect
+      value: 5s
+    - key: timeout-client
+      value: 50s
+    - key: timeout-server
+      value: 5s
+    - key: stats
+      value: enable
+    - key: stats-uri
+      value: "/haproxy"
+    - key: stats-refresh
+      value: 5s
+
+- name: create lb data directory
+  ansible.builtin.file:
+    path: "{{ lb.config_dir }}"
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+  become: true
+
+- name: Install pip
+  ansible.builtin.apt:
+    name: python-pip
+  become: yes
+
+- name: check if rules file exists
+  stat: 
+    path: "{{ lb.config_dir }}/haproxy.cfg"
+  register: haproxy_cfg_exists
+
+- name: Touch haproxy config file
+  ansible.builtin.file:
+    path: "{{ lb.config_dir }}/haproxy.cfg"
+    state: touch
+    mode: 0644
+    owner: consul
+    group: consul
+  become: true
+  when: haproxy_cfg_exists.stat.exists == False
+
+- name: Install docker-py for ansible to control docker
+  ansible.builtin.pip:
+    name: docker-py
+  become: yes
+
+- name: Run haproxy container
+  community.general.docker_container:
+    name: lb
+    image: haproxy
+    state: started
+    ports:
+      - "80:80"
+    restart_policy: always
+    volumes:
+      - "{{ lb.config_dir }}/haproxy.cfg:/usr/local/etc/haproxy/haproxy.cfg"
+  register: haproxy
+
+- name: Copy LB specific consul config
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/consul.d/
+  become: yes
+  loop:
+    - services/
+    - watches/
+
+- name: Restart consul service
+  ansible.builtin.service:
+    name: consul
+    state: restarted
+    enabled: yes
+  become: yes
+  when: haproxy.changed
+
+- name: Sleep for 15 seconds for consul service to come back up
+  wait_for:
+    timeout: 15
+  when: haproxy.changed
+
+- name: Start consul-template service
+  ansible.builtin.service:
+    name: consul-template
+    state: started
+    enabled: yes
+  become: yes
+

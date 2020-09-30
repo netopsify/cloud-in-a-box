@@ -1,0 +1,23 @@
+exit_after_auth = true
+pid_file = "./pidfile"
+
+auto_auth {
+  sink "file" {
+      config = {
+          path = "{{ vault.agent.auth_file_path }}"
+      }
+  }
+}
+
+vault {
+  address = "{{ vault.agent.scheme }}://{{ vault.agent.server }}:{{ vault.agent.port }}"
+}
+
+cache {
+        use_auto_auth_token = {{ vault.agent.use_auto_auth_token }}
+}
+
+listener "tcp" {
+         address = "{{ vault.agent.listener.address }}:{{ vault.agent.listener.port }}"
+         tls_disable = {{ vault.agent.listener.tls_disable }}
+}

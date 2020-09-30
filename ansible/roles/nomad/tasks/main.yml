@@ -1,0 +1,104 @@
+---
+# tasks file for nomad
+- name: Update repositories cache and install packages
+  ansible.builtin.apt:
+    pkg:
+      - nomad
+  become: true
+
+- name: Add nomad autocompletion
+  shell:
+    cmd: nomad -autocomplete-install
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: Add nomad autocompletion
+  shell:
+    cmd: bash -c "complete -C /usr/bin/nomad nomad"
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: create nomad group
+  ansible.builtin.group:
+    name: nomad
+    state: present
+  become: true
+
+- name: Add non-privileged user for nomad
+  ansible.builtin.user:
+    name: nomad
+    system: true
+    shell: /bin/bash
+  become: true
+
+- name: create nomad data directory
+  ansible.builtin.file:
+    path: "{{ nomad.common.data_dir }}"
+    state: directory
+  become: true
+  become_user: vagrant
+
+- name: create nomad config directory
+  ansible.builtin.file:
+    path: /etc/nomad.d
+    state: directory
+    mode: 0755
+    owner: nomad
+    group: nomad
+    recurse: yes
+  become: true
+
+- name: Copy common nomad config
+  ansible.builtin.template:
+    src: nomad.j2
+    dest: /etc/nomad.d/nomad.hcl
+    mode: 0644
+    owner: nomad
+    group: nomad
+
+- name: Copy nomad server config
+  ansible.builtin.template:
+    src: server.j2
+    dest: /etc/nomad.d/server.hcl
+    mode: 0644
+    owner: nomad
+    group: nomad
+  when: nomad_node_type == "server"
+
+- name: Copy nomad client config
+  ansible.builtin.template:
+    src: client.j2
+    dest: /etc/nomad.d/client.hcl
+    mode: 0644
+    owner: nomad
+    group: nomad
+  when: nomad_node_type == "client"
+
+- name: create nomad service directory
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system
+    state: directory
+  become: true
+
+- name: install nomad sysconfig
+  ansible.builtin.copy:
+    src: nomad.service
+    dest: /usr/lib/systemd/system/nomad.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: enable nomad service
+  ansible.builtin.service:
+    name: nomad
+    enabled: yes
+  become: true
+
+- name: start nomad
+  ansible.builtin.service:
+    name: nomad
+    state: restarted
+  become: true

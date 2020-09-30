@@ -1,0 +1,18 @@
+server = true
+ui = {{ consul.ui }}
+bootstrap_expect = {{ consul.bootstrap_expect }}
+
+{% if consul.acl.enable is defined %}
+acl = {
+    enabled = true
+    default_policy = "{{ consul.acl.default_policy }}"
+    enable_token_persistence = {{ consul.acl.enable_token_persistence }}
+}
+{% endif %}
+
+{% if consul.telemetry.enable is defined %}
+telemetry = {
+    dogstatsd_addr = "{{ consul.telemetry.dogstatsd_addr }}"
+    disable_hostname = {{ consul.telemetry.disable_hostname }}
+}
+{% endif %}

@@ -1,0 +1,44 @@
+client {
+  enabled = true
+  network_interface = "{{ nomad.client.network_interface }}"
+  servers           = [{% for server in nomad.client.servers %}"{{ server }}"{{ ", " if not loop.last}}{% endfor %}]
+  meta {
+{% for meta in nomad.client.meta %}
+{% for k, v in meta.items() %}
+    "{{ k }}" = "{{ v }}"
+{% endfor %}
+{% endfor %}
+  }
+}
+
+addresses {
+  rpc  = "{% raw %}{{ GetInterfaceIP `{% endraw %}{{ nomad.client.network_interface }}{% raw %}` }}{% endraw %}"
+  serf = "{% raw %}{{ GetInterfaceIP `{% endraw %}{{ nomad.client.network_interface }}{% raw %}` }}{% endraw %}"
+}
+
+{% if nomad.client.plugin.exec %}
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
+{% endif %}
+
+{% if nomad.client.plugin.docker %}
+plugin "docker" {
+  config {
+    endpoint = "unix:///var/run/docker.sock"
+
+    volumes {
+      enabled      = true
+      selinuxlabel = "z"
+    }
+
+    allow_privileged = false
+    # allow_caps       = ["CHOWN", "NET_RAW"]
+
+    # allow_caps can also be set to "ALL"
+    allow_caps = ["ALL"]
+  }
+}
+{% endif %}

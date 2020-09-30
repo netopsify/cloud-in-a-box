@@ -1,0 +1,21 @@
+server {
+  enabled = true
+  bootstrap_expect = {{ nomad.server.bootstrap_expect }}
+}
+
+bind_addr = "{{ nomad.server.bind_addr }}"
+
+{% if nomad.server.client.enable %}
+client {
+  enabled = true
+  network_interface = "{{ nomad.server.client.network_interface }}"
+}
+{% endif %}
+
+{% if nomad.server.plugin.exec %}
+plugin "raw_exec" {
+  config {
+    enabled = true
+  }
+}
+{% endif %}

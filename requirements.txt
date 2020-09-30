@@ -1,0 +1,5 @@
+paramiko
+ansible
+ttp
+netaddr
+ansible-vagrant

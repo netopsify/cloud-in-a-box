@@ -1,0 +1,94 @@
+---
+# tasks file for vault
+- name: Update repositories cache and install packages
+  ansible.builtin.apt:
+    pkg:
+      - vault
+  become: true
+
+- name: Add vault autocompletion
+  shell:
+    cmd: vault -autocomplete-install
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: Add vault autocompletion
+  shell:
+    cmd: bash -c "complete -C /usr/bin/vault vault"
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: Allow Vault to use mlock syscall without root
+  shell:
+    cmd: setcap cap_ipc_lock=+ep /usr/bin/vault
+  become: true
+  ignore_errors: true
+
+- name: create vault group
+  ansible.builtin.group:
+    name: vault
+    state: present
+  become: true
+
+- name: Add non-privileged user for vault
+  ansible.builtin.user:
+    name: vault
+    system: true
+    shell: /bin/bash
+  become: true
+
+- name: create vault config directory
+  ansible.builtin.file:
+    path: /etc/vault.d
+    state: directory
+    mode: 755
+    owner: vault
+    group: vault
+  become: true
+
+- name: Create common vault server config
+  ansible.builtin.template:
+    src: vault.j2
+    dest: /etc/vault.d/vault.hcl
+    mode: 0644
+    owner: vault
+    group: vault
+  when: vault_node_type == "server"
+
+- name: Create common vault agent config
+  ansible.builtin.template:
+    src: vault-agent.j2
+    dest: /etc/vault.d/vault.hcl
+    mode: 0644
+    owner: vault
+    group: vault
+  when: vault_node_type == "app"
+
+- name: create vault service directory
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system
+    state: directory
+  become: true
+
+- name: install vault sysconfig
+  ansible.builtin.copy:
+    src: vault.service
+    dest: /usr/lib/systemd/system/vault.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: enable vault service
+  ansible.builtin.service:
+    name: vault
+    enabled: yes
+  become: true
+
+- name: start vault
+  ansible.builtin.service:
+    name: vault
+    state: started
+  become: true

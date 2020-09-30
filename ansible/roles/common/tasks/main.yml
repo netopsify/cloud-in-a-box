@@ -1,0 +1,64 @@
+---
+# tasks file for consul
+
+- name: Update repositories cache and install packages
+  ansible.builtin.apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+    pkg:
+      - python-apt
+      - unzip
+      - bc
+      - stress
+      - jq
+      - bash-completion
+  become: true
+
+- name: Change prompt
+  ansible.builtin.blockinfile:
+    path: /home/vagrant/.bashrc
+    block: |
+      # Coloring of hostname in prompt to keep track of what's what in demos, blue provides a little emphasis but not too much like red
+      NORMAL="\[\e[0m\]"
+      BOLD="\[\e[1m\]"
+      DARKGRAY="\[\e[90m\]"
+      BLUE="\[\e[34m\]"
+      PS1="$DARKGRAY\u@$BOLD$BLUE\h$DARKGRAY:\w\$ $NORMAL"
+  become: true
+  become_user: vagrant
+
+- name: Add deadsnakes repo for python3
+  ansible.builtin.apt_repository:
+    repo: ppa:deadsnakes/ppa
+    state: present
+  become: true
+
+- name: Add the HashiCorp GPG key.
+  ansible.builtin.apt_key:
+    url: https://apt.releases.hashicorp.com/gpg
+    state: present
+  become: true
+
+- name: Add specified repository into sources list
+  ansible.builtin.apt_repository:
+    repo: deb [arch=amd64] https://apt.releases.hashicorp.com focal main
+    state: present
+  become: true
+
+- name: Update repositories cache and install packages
+  ansible.builtin.apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+  become: true
+
+- name: Update repositories cache and install python
+  ansible.builtin.apt:
+    update_cache: yes
+    force_apt_get: yes
+    cache_valid_time: 3600
+    pkg:
+      - python3.6
+      - python3-setuptools
+  become: true

@@ -1,0 +1,180 @@
+---
+# tasks file for consul
+- name: Update repositories cache and install packages
+  ansible.builtin.apt:
+    pkg:
+      - consul
+  become: true
+
+- name: Add consul autocompletion
+  shell:
+    cmd: consul -autocomplete-install
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: Add consul autocompletion
+  shell:
+    cmd: bash -c "complete -C /usr/bin/consul consul"
+  become: true
+  become_user: vagrant
+  ignore_errors: true
+
+- name: create consul group
+  ansible.builtin.group:
+    name: consul
+    state: present
+  become: true
+
+- name: Add non-privileged user for Consul
+  ansible.builtin.user:
+    name: consul
+    system: true
+    shell: /bin/bash
+  become: true
+
+- name: create consul data directory
+  ansible.builtin.file:
+    path: "{{ consul.data_dir }}"
+    state: directory
+  become: true
+  become_user: vagrant
+
+- name: create consul config directory
+  ansible.builtin.file:
+    path: /etc/consul.d
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+    recurse: yes
+  become: true
+
+- name: Copy common consul config
+  ansible.builtin.template:
+    src: consul.j2
+    dest: /etc/consul.d/consul.hcl
+    mode: 0644
+    owner: consul
+    group: consul
+
+- name: Copy consul additional configs
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/consul.d/{{ item }}
+    mode: 0644
+  loop:
+    - hc.json
+  loop_control:
+    label: "{{ item }}"
+  become: true
+  when: inventory_hostname in [groups['web'], groups['lb'], groups['as']]
+
+- name: create consul scripts directory
+  ansible.builtin.file:
+    path: "/etc/consul.d/scripts"
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+  become: true
+
+- name: Copy scripts
+  ansible.builtin.copy:
+    src: "{{ item.src }}"
+    dest: "/etc/consul.d/scripts/{{ item.path }}"
+    mode: "a+x"
+    owner: consul
+    group: consul
+  with_community.general.filetree:
+    - "scripts"
+  when: item.state == 'file'
+  loop_control:
+    label: "{{ item.path }}"
+
+- name: Copy consul server config
+  ansible.builtin.template:
+    src: server.j2
+    dest: /etc/consul.d/server.hcl
+    mode: 0644
+    owner: consul
+    group: consul
+  when: consul_node_type == "server"
+
+- name: create consul service directory
+  ansible.builtin.file:
+    path: /usr/lib/systemd/system
+    state: directory
+  become: true
+
+- name: install consul sysconfig
+  ansible.builtin.copy:
+    src: consul.service
+    dest: /usr/lib/systemd/system/consul.service
+    owner: root
+    group: root
+    mode: 0644
+  become: true
+
+- name: enable consul service
+  ansible.builtin.service:
+    name: consul
+    enabled: yes
+  become: true
+
+- name: start consul on server
+  ansible.builtin.service:
+    name: consul
+    state: started
+  become: true
+  when: consul_node_type == "server"
+
+- name: Sleep for 30 seconds for consul to come up
+  wait_for:
+    timeout: 30
+  when:
+    - bootstrap is defined and bootstrap
+    - consul.acl.enable is defined and consul.acl.enable
+    - consul_node_type == "server"
+
+- name: Bootstrap Consul
+  shell:
+    cmd: consul acl bootstrap
+  become: true
+  register: consul_bootstrap
+  when:
+    - bootstrap is defined and bootstrap
+    - consul.acl.enable is defined and consul.acl.enable
+    - consul_node_type == "server"
+  ignore_errors: yes
+
+- name: ensure secrets output directory exists
+  ansible.builtin.file:
+    path: "{{ consul.bootstrap_token_output_dir }}"
+    state: directory
+  become: true
+
+- name: store bootstrap token
+  ansible.builtin.copy:
+    content: "{{ consul_bootstrap.stdout }}"
+    dest: "{{ consul.bootstrap_token_output_dir }}/bootstrap.txt"
+  when:
+    - bootstrap is defined and bootstrap
+    - consul.acl.enable is defined and consul.acl.enable
+    - consul_node_type == "server"
+
+- name: store bootstrap token
+  fetch:
+    src: "{{ consul.bootstrap_token_output_dir }}/bootstrap.txt"
+    dest: bootstrap.txt
+    flat: yes
+
+- name: start consul on clients
+  ansible.builtin.service:
+    name: consul
+    state: restarted
+  become: true
+  when:
+    - bootstrap is defined and bootstrap
+    - consul.acl.enable is defined and consul.acl.enable
+    - consul_node_type != "server"

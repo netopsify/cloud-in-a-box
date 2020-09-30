@@ -1,0 +1,56 @@
+---
+# tasks file for web
+- name: create web data directory
+  ansible.builtin.file:
+    path: "{{ web.config_dir }}"
+    state: directory
+    mode: 0755
+    owner: consul
+    group: consul
+    recurse: yes
+  become: true
+
+- name: Install pip
+  ansible.builtin.apt:
+    name: python-pip
+  become: yes
+
+- name: Copy ip.html
+  ansible.builtin.template:
+    src: ip.html.j2
+    dest: "{{ web.config_dir }}/ip.html"
+  notify:
+    - Restart web
+
+- name: Install docker-py for ansible to control docker
+  ansible.builtin.pip:
+    name: docker-py
+  become: yes
+
+# Very much like docker-compose
+- name: Run nginx container
+  community.general.docker_container:
+    name: web
+    image: nginx
+    state: started
+    ports:
+      - "8080:80"
+    restart_policy: always
+    volumes:
+      - "{{ web.config_dir }}/ip.html:/usr/share/nginx/html/ip.html:ro"
+
+- name: Copy web specific consul config
+  ansible.builtin.copy:
+    src: "{{ item }}"
+    dest: /etc/consul.d/
+  become: yes
+  loop:
+    - services/
+    - watches/
+
+- name: Restart consul service
+  ansible.builtin.service:
+    name: consul
+    state: restarted
+    enabled: yes
+  become: yes

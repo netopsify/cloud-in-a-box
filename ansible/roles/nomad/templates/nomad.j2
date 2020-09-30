@@ -1,0 +1,18 @@
+datacenter = "{{ datacenter }}"
+
+data_dir = "{{ nomad.common.data_dir }}"
+log_level = "{{ nomad.common.log_level }}"
+
+advertise {
+  http = "{% raw %}{{ GetInterfaceIP `{% endraw %}{{ nomad.common.advertise.interface }}{% raw %}` }}{% endraw %}"
+  rpc  = "{% raw %}{{ GetInterfaceIP `{% endraw %}{{ nomad.common.advertise.interface }}{% raw %}` }}{% endraw %}"
+  serf = "{% raw %}{{ GetInterfaceIP `{% endraw %}{{ nomad.common.advertise.interface }}{% raw %}` }}{% endraw %}"
+}
+
+{% if nomad.common.consul.enable %}
+consul {
+  address = "{{ nomad.common.consul.address }}:{{ nomad.common.consul.port }}"
+  auto_advertise = {{ nomad.common.consul.auto_advertise }}
+  server_auto_join = {{ nomad.common.consul.server_auto_join }}
+}
+{% endif %}

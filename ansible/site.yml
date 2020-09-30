@@ -1,0 +1,39 @@
+# If you want to bootstrap Consul ACL
+# ansible-playbook -i inventory site.yml -e "bootstrap=True"
+# Otherwise
+# ansible-playbook -i inventory site.yml
+---
+- hosts: all, !lb_f5
+  become: true
+
+  tasks:
+    - name: Include user vars
+      include_vars:
+        file: vars.yml
+    - name: Deploy Common
+      include_role:
+        name: common
+    - name: Deploy Consul
+      include_role:
+        name: consul
+      when: inventory_hostname in groups['consul_servers'] or inventory_hostname in groups['consul_clients']
+    - name: Deploy Vault
+      include_role:
+        name: vault
+      when: inventory_hostname in groups['vault_servers'] or inventory_hostname in groups['vault_clients']
+    - name: Deploy Nomad
+      include_role:
+        name: nomad
+      when: inventory_hostname in groups['nomad_servers'] or inventory_hostname in groups['nomad_clients']
+    - name: Deploy Web
+      include_role:
+        name: web
+      when: inventory_hostname in groups['web']
+    - name: Deploy Consul-template
+      include_role:
+        name: consul-template
+      when: inventory_hostname in groups['lb_linux']
+    - name: Deploy LB
+      include_role:
+        name: lb
+      when: inventory_hostname in groups['lb_linux']
