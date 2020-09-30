@@ -1,3 +1,4 @@
+# Inspired from https://github.com/g0t4/consul-getting-started.git
 Vagrant.configure("2") do |config|
   config.vm.provision "shell", path: "build/bootstrap.sh", privileged: false
     
