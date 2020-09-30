@@ -4,7 +4,8 @@ The purpose of this work is demonstrate how we can manage on-prem and Cloud infr
 
 We'd like to introduce Cloud in a box and what we mean by it.
 Cloud in a box is a framework that comes with tools and workflows supporting the vision of managing on-prem and Cloud infrastructure seamlessly with cloud style operation. Hence **Cloud in a box**!
-The goal of this repo is to build a standard automation/orchestration stack that runs standard workflows and processes to achieve the vision.
+
+The goal of this repo is to demonstrate a build of standard automation/orchestration stack that runs standard workflows and processes to achieve the vision.
 
 *[NOTE]* This is work in progress and will be built in multiple stages.
 
