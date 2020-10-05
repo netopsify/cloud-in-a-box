@@ -10,6 +10,7 @@ prereq:
 	@echo "--------------------------------------------------------------------"
 	@echo "Installing required Python Libraries"
 	@echo ""
+	@mkdir secrets
 	@pip install -r requirements.txt
 
 bootstrap:
