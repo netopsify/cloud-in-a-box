@@ -42,7 +42,7 @@
     - name: Fetch bootstrap secrets
       ansible.builtin.fetch:
         src: "{{ vault.bootstrap_token_output_dir }}/{{ vault.bootstrap_token_output_file }}"
-        dest: "{{ vault.bootstrap_token_output_file }}"
+        dest: "{{ vault.bootstrap_token_local_output_file }}"
         flat: yes
 
     - name: Check Vault current status

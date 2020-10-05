@@ -4,6 +4,7 @@ consul:
   ui: "true"
   bootstrap_expect: "1"
   bootstrap_token_output_dir: /vagrant/ansible/secrets
+  bootstrap_token_output_file: consul-secrets.txt
   bootstrap_token_local_output_file: secrets/consul-secrets.txt
   client_addr: "0.0.0.0"
   advertise_int: eth1 # or use advertise_addr: '172.16.1.11'
@@ -25,6 +26,7 @@ consul:
 vault:
   ui: "true"
   bootstrap_token_output_dir: /vagrant/ansible/secrets
+  bootstrap_token_output_file: vault-secrets.json
   bootstrap_token_local_output_file: secrets/vault-secrets.json
   bootstrap:
     secret_shares: 5

@@ -40,3 +40,5 @@
     - name: Bootstrap Vault
       include_role:
         name: vault.bootstrap
+      when: inventory_hostname in groups['vault_servers']
+      run_once: true

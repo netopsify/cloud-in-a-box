@@ -138,42 +138,31 @@
     - consul_node_type == "server"
 
 - name: Bootstrap Consul
-  shell:
-    cmd: consul acl bootstrap
-  become: true
-  register: consul_bootstrap
-  when:
-    - bootstrap is defined and bootstrap
-    - consul.acl.enable is defined and consul.acl.enable
-    - consul_node_type == "server"
-  ignore_errors: yes
+  block:
+    - name: Run Bootstrap
+      shell:
+        cmd: consul acl bootstrap
+      become: true
+      register: consul_bootstrap
+      ignore_errors: yes
 
-- name: ensure secrets output directory exists
-  ansible.builtin.file:
-    path: "{{ consul.bootstrap_token_output_dir }}"
-    state: directory
-  become: true
+    - name: ensure secrets output directory exists
+      ansible.builtin.file:
+        path: "{{ consul.bootstrap_token_output_dir }}"
+        state: directory
+      become: true
 
-- name: store bootstrap token
-  ansible.builtin.copy:
-    content: "{{ consul_bootstrap.stdout }}"
-    dest: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
-  when:
-    - bootstrap is defined and bootstrap
-    - consul.acl.enable is defined and consul.acl.enable
-    - consul_node_type == "server"
+    - name: store bootstrap token
+      ansible.builtin.copy:
+        content: "{{ consul_bootstrap.stdout }}"
+        dest: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
 
-- name: store bootstrap token
-  fetch:
-    src: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
-    dest: "{{ consul.bootstrap_token_output_file }}"
-    flat: yes
+    - name: store bootstrap token
+      fetch:
+        src: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
+        dest: "{{ consul.bootstrap_token_local_output_file }}"
+        flat: yes
 
-- name: start consul on clients
-  ansible.builtin.service:
-    name: consul
-    state: restarted
-  become: true
   when:
     - bootstrap is defined and bootstrap
     - consul.acl.enable is defined and consul.acl.enable
