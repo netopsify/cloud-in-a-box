@@ -1,19 +1,24 @@
 Role Name
 =========
 
-This is a simple Role to setup run a nginx container as webservers with a page `ip.html` showing its name and IP.
+Install and setup Hashicorp Consul-Template on Ubuntu
 
 Requirements
 ------------
 
-Dockers is installed.
+None
 
 Role Variables
 --------------
 
+The following variables can be defined.
+
 ```yaml
-web:
-  config_dir: /opt/config
+consul_template:
+  config_dir: /opt/consul-template
+  version: 0.25.1
+  templates_dir: /opt/consul-template/templates
+  handlers_dir: /opt/consul-template/handlers
 ```
 
 Dependencies
@@ -29,7 +34,7 @@ Example Playbook
 ```yaml
     - hosts: servers
       roles:
-         - { role: web }
+         - { role: consul.template }
 ```
 
 License

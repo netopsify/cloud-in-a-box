@@ -157,7 +157,7 @@
 - name: store bootstrap token
   ansible.builtin.copy:
     content: "{{ consul_bootstrap.stdout }}"
-    dest: "{{ consul.bootstrap_token_output_dir }}/bootstrap.txt"
+    dest: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
   when:
     - bootstrap is defined and bootstrap
     - consul.acl.enable is defined and consul.acl.enable
@@ -165,8 +165,8 @@
 
 - name: store bootstrap token
   fetch:
-    src: "{{ consul.bootstrap_token_output_dir }}/bootstrap.txt"
-    dest: bootstrap.txt
+    src: "{{ consul.bootstrap_token_output_dir }}/{{ consul.bootstrap_token_output_file }}"
+    dest: "{{ consul.bootstrap_token_output_file }}"
     flat: yes
 
 - name: start consul on clients

@@ -1,6 +1,8 @@
 .envrc
 *.retry
 bootstrap.txt
+consul-secrets.txt
+vault-secrets.json
 
 # VISUALSTUDIOCODE
 .vscode/*

@@ -1,0 +1,140 @@
+---
+# tasks file for vault.bootstrap
+- name: Check Vault current status
+  ansible.builtin.uri:
+    url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/health
+    method: GET
+    status_code: [200, 429, 472, 473, 501, 503]
+    return_content: yes
+  register: vault_status
+
+- name: Print response from VAULT
+  ansible.builtin.debug: var=vault_status
+
+- name: Initialize Vault if it is uninitialized
+  block:
+    - name: Initialize Vault
+      ansible.builtin.uri:
+        url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/init
+        method: PUT
+        status_code: [200]
+        body_format: json
+        body:
+          secret_shares: 5
+          secret_threshold: 3
+        return_content: yes
+      register: vault_init
+
+    - name: Print response from VAULT before initializing
+      ansible.builtin.debug: var=vault_init
+
+    - name: ensure secrets output directory exists
+      ansible.builtin.file:
+        path: "{{ vault.bootstrap_token_output_dir }}"
+        state: directory
+      become: true
+
+    - name: Store bootstrap token
+      ansible.builtin.copy:
+        content: "{{ vault_init.json }}"
+        dest: "{{ vault.bootstrap_token_output_dir }}/{{ vault.bootstrap_token_output_file }}"
+
+    - name: Fetch bootstrap secrets
+      ansible.builtin.fetch:
+        src: "{{ vault.bootstrap_token_output_dir }}/{{ vault.bootstrap_token_output_file }}"
+        dest: "{{ vault.bootstrap_token_output_file }}"
+        flat: yes
+
+    - name: Check Vault current status
+      ansible.builtin.uri:
+        url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/health
+        method: GET
+        status_code: [503]
+        return_content: yes
+      register: vault_initialized
+
+    - name: Debug response from VAULT after initializing
+      ansible.builtin.debug: var=vault_initialized
+
+  when:
+    - init is defined and init
+    - vault_status["json"]["initialized"] is false
+    - vault_status["json"]["sealed"] is true
+    - vault_status["status"] == 501
+
+- name: Seal Vault
+  block:
+    - name: Seal/Reset Vault
+      ansible.builtin.uri:
+        url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/unseal
+        method: PUT
+        status_code: [200]
+        body:
+          reset: true
+        return_content: yes
+      register: vault_sealed
+
+    - name: Print seal response from VAULT after Sealing
+      ansible.builtin.debug: var=vault_sealed
+  when:
+    - seal is defined and seal
+
+- name: Checking Vault current status and make sure its seal and initialized
+  ansible.builtin.uri:
+    url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/health
+    method: GET
+    status_code: [503]
+    return_content: yes
+  register: vault_status
+
+- name: Unseal Vault if it is sealed
+  block:
+    - name: Print response from VAULT before Unsealing
+      ansible.builtin.debug: var=vault_status
+
+    - name: Set vault key threshold
+      set_fact:
+        unseal_loop: "{{ vault.bootstrap.secret_threshold - 1 }}"
+
+    # - name: Print vault_init
+    #   ansible.builtin.debug: var=vault_init
+    # - debug: var=unseal_loop
+    # - name: Print response from VAULT
+    #   ansible.builtin.debug: var=vault_status
+    # - name: with_sequence
+    #   ansible.builtin.debug:
+    #     msg: '{{ vault_init["json"]["keys"][item|int] }}'
+    #   with_sequence: start=0 end={{ unseal_loop|int }}
+
+    - name: Unseal Vault
+      ansible.builtin.uri:
+        url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/unseal
+        method: PUT
+        status_code: [200]
+        body_format: json
+        body:
+          key: '{{ vault_init["json"]["keys"][item|int] | default(vault_keys["json"]["keys"][item|int]) }}'
+        return_content: yes
+      register: vault_unseal
+      with_sequence: start=0 end={{ unseal_loop|int }}
+
+    - name: Wait for 5 sec for Vault to unseal
+      wait_for:
+        timeout: 5
+
+    - name: Check Vault current status after unsealing
+      ansible.builtin.uri:
+        url: http://127.0.0.1:{{ vault.api.port }}/v1/sys/health
+        method: GET
+        status_code: [200]
+        return_content: yes
+      register: vault_unsealed
+
+    - name: Print response from VAULT after unsealing
+      ansible.builtin.debug: var=vault_unsealed
+
+  when:
+    - unseal is defined and unseal
+    - vault_status["json"]["initialized"] == true
+    - vault_status["json"]["sealed"] == true
+    - vault_status["status"] == 503

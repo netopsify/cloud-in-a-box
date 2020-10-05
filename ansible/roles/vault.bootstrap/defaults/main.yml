@@ -1,0 +1,18 @@
+---
+# defaults file for vault.bootstrap
+init: true
+unseal: true
+vault:
+  ui: "true"
+  bootstrap:
+    secret_shares: 5
+    secret_threshold: 3
+  api:
+    scheme: http
+    port: "8200"
+  listerner_address: "0.0.0.0"
+  listerner_port: "8200"
+  tls_disable: "true"
+vault_keys:
+  json:
+    keys: []

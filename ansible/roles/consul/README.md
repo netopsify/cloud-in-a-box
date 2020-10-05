@@ -1,31 +1,59 @@
 Role Name
 =========
 
-A brief description of the role goes here.
+Install and setup Hashicorp Consul server and client agent on Ubuntu.
+It can be used to bootstrap consul cluster, enable ACL and Telemetry.
 
 Requirements
 ------------
 
-Any pre-requisites that may not be covered by Ansible itself or the role should be mentioned here. For instance, if the role uses the EC2 module, it may be a good idea to mention in this section that the boto package is required.
+None
 
 Role Variables
 --------------
 
-A description of the settable variables for this role should go here, including any variables that are in defaults/main.yml, vars/main.yml, and any variables that can/should be set via parameters to the role. Any variables that are read from other roles and/or the global scope (ie. hostvars, group vars, etc.) should be mentioned here as well.
+The following variables can be defined.
+
+```yaml
+datacenter: "dc1"
+consul:
+  ui: "true"
+  bootstrap_expect: "1"
+  bootstrap_token_output_dir: /vagrant/ansible/secrets
+  client_addr: "0.0.0.0"
+  advertise_int: eth1 # or use advertise_addr: '172.16.1.11'
+  servers:
+    - 172.16.1.11
+  data_dir: /opt/consul
+  log_level: "INFO"
+  disable_remote_exec: "false"
+  enable_script_checks: "true"
+  enable_local_script_checks: "true"
+  acl:
+    enable: true
+    default_policy: "allow"
+    enable_token_persistence: "true"
+  telemetry:
+    enable: true
+    dogstatsd_addr: "172.20.1.1:8125"
+    disable_hostname: "false"
+```
 
 Dependencies
 ------------
 
-A list of other roles hosted on Galaxy should go here, plus any details in regards to parameters that may need to be set for other roles, or variables that are used from other roles.
+None
 
 Example Playbook
 ----------------
 
-Including an example of how to use your role (for instance, with variables passed in as parameters) is always nice for users too:
+Example playbook
 
+```yaml
     - hosts: servers
       roles:
-         - { role: username.rolename, x: 42 }
+         - { role: consul }
+```
 
 License
 -------
@@ -35,4 +63,5 @@ BSD
 Author Information
 ------------------
 
-An optional section for the role authors to include contact information, or a website (HTML is not allowed).
+Author: Mirza Waqas Ahmed
+For any issue contact me at m.w.ahmed@gmail.com

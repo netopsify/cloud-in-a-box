@@ -1,0 +1,12 @@
+# ansible-playbook -i inventory pb-test.yml
+---
+- hosts: vs-1
+  become: true
+
+  tasks:
+    - name: Include user vars
+      include_vars:
+        file: vars.yml
+    - name: Bootstrap Vault
+      include_role:
+        name: vault.bootstrap

@@ -31,9 +31,12 @@
       when: inventory_hostname in groups['web']
     - name: Deploy Consul-template
       include_role:
-        name: consul-template
+        name: consul.template
       when: inventory_hostname in groups['lb_linux']
     - name: Deploy LB
       include_role:
         name: lb
       when: inventory_hostname in groups['lb_linux']
+    - name: Bootstrap Vault
+      include_role:
+        name: vault.bootstrap
