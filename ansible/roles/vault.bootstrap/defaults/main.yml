@@ -1,6 +1,6 @@
 ---
 # defaults file for vault.bootstrap
-init: true
+init: false
 unseal: true
 vault:
   ui: "true"
@@ -15,4 +15,11 @@ vault:
   tls_disable: "true"
 vault_keys:
   json:
-    keys: []
+    keys:
+      [
+        "348363cbb88a4dda04d4e4ba606a673c9ec6fdd9239cd8e99188ff7fbf4f656365",
+        "3e813bfca4bb0410a899726888de880a2bc2fd2209b533370aa4b099962e84e09e",
+        "8d9bb06703cf285f8d54782cffb935d6f07c2176796defc94e176f8d6246a22e5a",
+        "9aa26f4b076298de79c2c97675e7887c97f15ccbba69c40d0bfacb2ec9e7ef2241",
+        "cff1d003e78ebc20248b811c3decefc2b5244aa2d9e6f00eb1c97cedb2e74c4257",
+      ]

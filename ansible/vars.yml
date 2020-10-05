@@ -1,4 +1,18 @@
 ---
+# What to deploy
+common: false
+deploy_consul: false
+deploy_vault: false
+deploy_nomad: false
+deploy_web: false
+deploy_ct: false
+deploy_lb: false
+bootstrap_vault: true
+init: false
+unseal: true
+##################################################
+### Configuration Variables ######################
+##################################################
 datacenter: "dc1"
 consul:
   ui: "true"
@@ -88,9 +102,9 @@ nomad:
     servers:
       - 172.16.1.31
     meta:
-    - owner: IT
-    - service: web
-    - rack: "rack-12-1"
+      - owner: IT
+      - service: web
+      - rack: "rack-12-1"
     plugin:
       exec: true
       docker: true

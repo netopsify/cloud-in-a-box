@@ -1,7 +1,12 @@
 # If you want to bootstrap Consul ACL
 # ansible-playbook -i inventory site.yml -e "bootstrap=True"
-# Otherwise
+# Otherwise for complete setup
 # ansible-playbook -i inventory site.yml
+# Make sure you setup the `What to deploy` vars in the vars.yml file.
+# If you just want to unseal vault you can for instance set all vars to false.
+# But set `bootstrap_vault` and `unseal` var to true. and run
+# ansible-playbook -i inventory site.yml --limit vs-1
+# Make sure you provide the unseal keys manually at vault_keys["json"]["keys"]
 ---
 - hosts: all, !lb_f5
   become: true
@@ -10,35 +15,36 @@
     - name: Include user vars
       include_vars:
         file: vars.yml
-    - name: Deploy Common
+    - name: Install Common packages
       include_role:
         name: common
+      when: common is defined and common
     - name: Deploy Consul
       include_role:
         name: consul
-      when: inventory_hostname in groups['consul_servers'] or inventory_hostname in groups['consul_clients']
+      when: ((deploy_consul is defined and deploy_consul) and (inventory_hostname in groups['consul_servers'] or inventory_hostname in groups['consul_clients']))
     - name: Deploy Vault
       include_role:
         name: vault
-      when: inventory_hostname in groups['vault_servers'] or inventory_hostname in groups['vault_clients']
+      when: ((deploy_vault is defined and deploy_vault) and (inventory_hostname in groups['vault_servers'] or inventory_hostname in groups['vault_clients']))
     - name: Deploy Nomad
       include_role:
         name: nomad
-      when: inventory_hostname in groups['nomad_servers'] or inventory_hostname in groups['nomad_clients']
+      when: ((deploy_nomad is defined and deploy_nomad) and (inventory_hostname in groups['nomad_servers'] or inventory_hostname in groups['nomad_clients']))
     - name: Deploy Web
       include_role:
         name: web
-      when: inventory_hostname in groups['web']
+      when: deploy_web is defined and deploy_web and inventory_hostname in groups['web']
     - name: Deploy Consul-template
       include_role:
         name: consul.template
-      when: inventory_hostname in groups['lb_linux']
+      when: deploy_ct is defined and deploy_ct and inventory_hostname in groups['lb_linux']
     - name: Deploy LB
       include_role:
         name: lb
-      when: inventory_hostname in groups['lb_linux']
+      when: deploy_lb is defined and deploy_lb and inventory_hostname in groups['lb_linux']
     - name: Bootstrap Vault
       include_role:
         name: vault.bootstrap
-      when: inventory_hostname in groups['vault_servers']
+      when: bootstrap_vault is defined and bootstrap_vault and inventory_hostname in groups['vault_servers']
       run_once: true
